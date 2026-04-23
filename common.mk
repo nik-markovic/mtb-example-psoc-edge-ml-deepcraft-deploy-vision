@@ -29,7 +29,7 @@ MTB_TYPE=PROJECT
 # To change the target, it is recommended to use the Library manager
 # ('make library-manager' from command line), which will also update
 # Eclipse IDE launch configurations.
-TARGET=KIT_PSE84_EVAL_EPC2
+TARGET=APP_KIT_PSE84_AI
 
 # Name of toolchain to use. Options include:
 #
@@ -62,6 +62,18 @@ $(error GCC_ARM Release mode is not supported in this version of the code exampl
 endif
 
 ML_IMAGIMOB_CPU=cm55
+
+################################################################################
+# WebRTC pilot toggle
+#
+# Set WEBRTC_PILOT=ENABLED to build the pilot variant described in
+# work/reference/PILOT.md. In the pilot build the CM55 project runs only
+# the M0 software-encoder FPS benchmark and ML/LCD/USB-camera code is
+# compiled out. Leave DISABLED for the default machine-learning vision
+# demo.
+################################################################################
+WEBRTC_PILOT=ENABLED
+
 ################################################################################
 # Advanced Configuration
 ################################################################################

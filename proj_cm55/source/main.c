@@ -46,14 +46,21 @@
 #include "cyabs_rtos_impl.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#if !defined(WEBRTC_PILOT)
 #include "inference_task.h"
 #include "model.h"
 #include "lcd_task.h"
+#endif
+#if !defined(WEBRTC_PILOT)
 #include "ifx_time_utils.h"
+#endif
 #include "cycfg_qspi_memslot.h"
 #include "mtb_serial_memory.h"
 #ifdef USE_DVP_CAM
 #include "mtb_dvp_camera_ov7675.h"
+#endif
+#if defined(WEBRTC_PILOT)
+#include "encode_benchmark.h"
 #endif
 
 /******************************************************************************
@@ -74,16 +81,21 @@
 /******************************************************************************
  * Global Variables
  ******************************************************************************/
-#ifdef USE_USB_CAM
+#if defined(USE_USB_CAM) && !defined(WEBRTC_PILOT)
 static cy_thread_t usb_webcam_thread;
 static cy_thread_t inference_thread;
 #endif
+#if !defined(WEBRTC_PILOT)
 static cy_thread_t gfx_thread;
+#endif
+#if defined(WEBRTC_PILOT)
+static cy_thread_t encode_benchmark_thread;
+#endif
 static mtb_serial_memory_t serial_memory_obj;
 static cy_stc_smif_mem_context_t smif_mem_context;
 static cy_stc_smif_mem_info_t smif_mem_info;
 
-#ifdef USE_DVP_CAM
+#if defined(USE_DVP_CAM) && !defined(WEBRTC_PILOT)
 /* double-buffered array to store image frames from the DVP camera, where one
  * buffer is being displayed while the other is being filled with new data */
 vg_lite_buffer_t dvp_bgr565_frames[NUM_IMAGE_BUFFERS];
@@ -95,15 +107,19 @@ bool active_frame = false;
 extern cy_stc_scb_i2c_context_t i2c_controller_context;
 #endif
 
+#if !defined(WEBRTC_PILOT)
 cy_semaphore_t model_semaphore;
 cy_semaphore_t usb_semaphore;
+#endif
 
 /*****************************************************************************
  * Function Prototypes
  *****************************************************************************/
+#if !defined(WEBRTC_PILOT)
 void cm55_ns_gfx_task ( void *arg );
 void cm55_usb_webcam_task ( void *arg );
 void cm55_inference_task ( void *arg );
+#endif
 void check_status(char *message, uint32_t status);
 
  /*******************************************************************************
@@ -356,7 +372,9 @@ int main ( void )
     /* Prevents this core from entering deepsleep */
     mtb_hal_syspm_lock_deepsleep();
 
+#if !defined(WEBRTC_PILOT)
     ifx_time_start();
+#endif
 
     /* Initialize PSRAM and set-up serial memory */
     smif_ospi_psram_init();
@@ -385,6 +403,7 @@ int main ( void )
     printf("5. OV7675 0.3MP DVP Camera: https://blog.arducam.com/products/camera-breakout-board/0-3mp-ov7675\r\n");
     printf("\r\n*************************************************************************************\r\n");
 
+#if !defined(WEBRTC_PILOT)
     result = cy_rtos_semaphore_init(&usb_semaphore, NUM_IMAGE_BUFFERS, 0);
     if ( CY_RSLT_SUCCESS != result ) {
         CY_ASSERT(0);
@@ -415,8 +434,22 @@ int main ( void )
         CY_ASSERT(0);
     }
 #endif
+#endif /* !WEBRTC_PILOT */
 
-#ifdef USE_DVP_CAM
+#if defined(WEBRTC_PILOT)
+    result = cy_rtos_thread_create( &encode_benchmark_thread,
+                                    &cm55_encode_benchmark_task,
+                                    ENCODE_BENCHMARK_TASK_NAME,
+                                    NULL,
+                                    ENCODE_BENCHMARK_TASK_STACK_SIZE,
+                                    ENCODE_BENCHMARK_TASK_PRIORITY,
+                                    NULL );
+    if ( CY_RSLT_SUCCESS != result ) {
+        CY_ASSERT(0);
+    }
+#endif
+
+#if defined(USE_DVP_CAM) && !defined(WEBRTC_PILOT)
     result = Cy_SCB_I2C_Init(CYBSP_I2C_CAM_CONTROLLER_HW, &CYBSP_I2C_CAM_CONTROLLER_config, &i2c_controller_context);
     if (CY_SCB_I2C_SUCCESS != result)
     {

@@ -150,3 +150,16 @@ Thumbs.db:encryptable
 ehthumbs.db
 ehthumbs_vista.db
 [Dd]esktop.ini
+
+.idea
+.clangd
+bsps
+assetlocks.json
+nsc_veneer.o
+project_info.json
+imports/
+.cache/
+libs/
+
+work/
+
