@@ -7,8 +7,8 @@
 #
 ################################################################################
 # \copyright
-# (c) 2025-2026, Infineon Technologies AG, or an affiliate of Infineon
-# Technologies AG.  SPDX-License-Identifier: Apache-2.0
+# Copyright 2024-2025, Cypress Semiconductor Corporation (an Infineon company)
+# SPDX-License-Identifier: Apache-2.0
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ VERBOSE=
 # ... then code in directories named COMPONENT_foo and COMPONENT_bar will be
 # added to the build
 #
-COMPONENTS+=FREERTOS RTOS_AWARE
+COMPONENTS+=FREERTOS LWIP MBEDTLS WCM SECURE_SOCKETS
 
 # Like COMPONENTS, but disable optional code that was enabled by default.
 DISABLE_COMPONENTS=
@@ -65,14 +65,40 @@ CORE_NAME=CM33_0
 # tree for source code and builds it. The SOURCES variable can be used to
 # manually add source code to the build process from a location not searched
 # by default, or otherwise not found by the build system.
-SOURCES+=
+SOURCES+=$(wildcard ../shared/source/COMPONENT_CM33/*.c)
 
 # Like SOURCES, but for include directories. Value should be paths to
 # directories (without a leading -I).
-INCLUDES+=
+INCLUDES+=../shared/include
+
+# Custom configuration of mbedtls library.
+MBEDTLSFLAGS=MBEDTLS_USER_CONFIG_FILE='"mbedtls_user_config.h"'
 
 # Add additional defines to the build process (without a leading -D).
-DEFINES+=CY_RETARGET_IO_CONVERT_LF_TO_CRLF
+DEFINES+=$(MBEDTLSFLAGS) CYBSP_WIFI_CAPABLE CY_RETARGET_IO_CONVERT_LF_TO_CRLF CY_RTOS_AWARE
+
+# Default configuration of mbedtls library.
+DEFINES+=MBEDTLS_CONFIG_FILE='"mbedtls/mbedtls_config.h"'
+# PSA configuration of mbedtls library.
+DEFINES+=MBEDTLS_PSA_CRYPTO_CONFIG_FILE='"configs/ifx_psa_crypto_config.h"'
+
+ifeq ($(TOOLCHAIN),LLVM_ARM)
+DEFINES+=CY_MQTT_EVENT_THREAD_STACK_SIZE=10*1024
+endif
+
+# for http client
+DEFINES+=ENABLE_HTTP_CLIENT_LOGS MQTT_DO_NOT_USE_CUSTOM_CONFIG
+DEFINES+=HTTP_DO_NOT_USE_CUSTOM_CONFIG
+# for sntp
+DEFINES+=SNTP_SERVER_DNS
+
+# To be able to detect the model in the app:
+DEFINES+=$(MODEL_SELECTION)
+
+# Required when MBEDTLS_HAVE_TIME_DATE is set in mbedtls_user_config.h
+DEFINES+=MBEDTLS_PLATFORM_MS_TIME_ALT
+
+SEARCH+=../shared/retarget_io/
 
 # Select softfp or hardfp floating point. Default is softfp.
 VFP_SELECT+=
@@ -121,11 +147,11 @@ CY_APP_PATH=
 
 # Relative path to the shared repo location.
 #
-# All .mtb files have the format, <URI>#<COMMIT>#<LOCATION>. If the <LOCATION> 
-# field begins with $$ASSET_REPO$$, then the repo is deposited in the path 
-# specified by the CY_GETLIBS_SHARED_PATH variable. The default location is one 
+# All .mtb files have the format, <URI>#<COMMIT>#<LOCATION>. If the <LOCATION>
+# field begins with $$ASSET_REPO$$, then the repo is deposited in the path
+# specified by the CY_GETLIBS_SHARED_PATH variable. The default location is one
 # directory level above the current app directory.
-# This is used with CY_GETLIBS_SHARED_NAME variable, which specifies the 
+# This is used with CY_GETLIBS_SHARED_NAME variable, which specifies the
 # directory name.
 CY_GETLIBS_SHARED_PATH=../..
 

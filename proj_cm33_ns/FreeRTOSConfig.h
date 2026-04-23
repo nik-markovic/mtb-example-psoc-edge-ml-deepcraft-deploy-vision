@@ -56,6 +56,7 @@
 #include "cy_device_headers.h"
 #endif
 
+
 #define configUSE_PREEMPTION                    1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION 0
 #if defined (__ICCARM__) || (__GNUC__)
@@ -66,7 +67,6 @@ extern uint32_t SystemCoreClock;
 #define configMAX_PRIORITIES                    7
 /* Increase the stack size to 256 to support ds-ram feature */
 #define configMINIMAL_STACK_SIZE                256
-#define configMINIMAL_SECURE_STACK_SIZE         256
 #define configMAX_TASK_NAME_LEN                 16
 #define configUSE_16_BIT_TICKS                  0
 #define configIDLE_SHOULD_YIELD                 1
@@ -89,12 +89,12 @@ when application makefile has VFP_SELECT configured as softfloat */
 #define configENABLE_FPU                        1
 #endif
 #define configENABLE_MPU                        0
-#if defined (COMPONENT_FREERTOS_TZ) || defined (COMPONENT_SECURE_DEVICE) 
-#define configENABLE_TRUSTZONE                  1
-#else
 #define configENABLE_TRUSTZONE                  0
-#endif         
+#if defined (COMPONENT_SECURE_DEVICE)
+#define configRUN_FREERTOS_SECURE_ONLY          1
+#else
 #define configRUN_FREERTOS_SECURE_ONLY          0
+#endif
 
 /* Memory allocation related definitions. */
 #define configSUPPORT_STATIC_ALLOCATION         1
@@ -199,6 +199,9 @@ standard names - or at least those used in the unmodified vector table. */
 /* Enable low power tickless functionality. The RTOS abstraction library
  * provides the compatible implementation of the vApplicationSleep hook:
  * https://github.com/Infineon/abstraction-rtos#freertos
+ * The Low Power Assistant library provides additional portable configuration layer
+ * for low-power features supported by the PSoC 6 devices:
+ * https://github.com/Infineon/lpa
  */
 extern void vApplicationSleep( uint32_t xExpectedIdleTime );
 #define portSUPPRESS_TICKS_AND_SLEEP( xIdleTime ) vApplicationSleep( xIdleTime )
@@ -229,6 +232,6 @@ extern void vApplicationSleep( uint32_t xExpectedIdleTime );
 #define configUSE_PICOLIBC_TLS                  1
 #else
 #define configUSE_NEWLIB_REENTRANT              1
-#endif
+#endif /* #if defined(__llvm__) && !defined(__ARMCC_VERSION) */
 
 #endif /* FREERTOS_CONFIG_H */
